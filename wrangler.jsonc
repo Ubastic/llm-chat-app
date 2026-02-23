@@ -18,5 +18,8 @@
 	"ai": {
 		"binding": "AI"
 	},
+	"vars": {
+		"GROQ_API_KEY": ""
+	},
 	"upload_source_maps": true
 }

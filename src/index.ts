@@ -44,6 +44,11 @@ export default {
 			return new Response("Method not allowed", { status: 405 });
 		}
 
+		// Groq API Proxy - OpenAI compatible endpoint
+		if (url.pathname.startsWith("/openai/v1/")) {
+			return handleGroqProxy(request, env);
+		}
+
 		// Handle 404 for unmatched routes
 		return new Response("Not found", { status: 404 });
 	},
@@ -95,6 +100,51 @@ async function handleChatRequest(
 		console.error("Error processing chat request:", error);
 		return new Response(
 			JSON.stringify({ error: "Failed to process request" }),
+			{
+				status: 500,
+				headers: { "content-type": "application/json" },
+			},
+		);
+	}
+}
+
+/**
+ * Handles Groq API proxy requests (OpenAI compatible)
+ */
+async function handleGroqProxy(
+	request: Request,
+	env: Env,
+): Promise<Response> {
+	try {
+		const GROQ_API_HOST = "api.groq.com";
+		const oldUrl = new URL(request.url);
+
+		// Construct new URL pointing to Groq API
+		const newUrl = new URL(request.url);
+		newUrl.hostname = GROQ_API_HOST;
+		newUrl.protocol = "https:";
+		newUrl.port = "";
+
+		// Build headers
+		const headers = new Headers(request.headers);
+		headers.set("host", GROQ_API_HOST);
+
+		// Add authorization header if API key is configured
+		if (env.GROQ_API_KEY) {
+			headers.set("authorization", `Bearer ${env.GROQ_API_KEY}`);
+		}
+
+		const modifiedRequest = new Request(newUrl, {
+			method: request.method,
+			headers: headers,
+			body: request.body,
+		});
+
+		return await fetch(modifiedRequest);
+	} catch (error) {
+		console.error("Error proxying Groq request:", error);
+		return new Response(
+			JSON.stringify({ error: "Failed to proxy request" }),
 			{
 				status: 500,
 				headers: { "content-type": "application/json" },

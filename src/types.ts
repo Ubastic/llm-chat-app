@@ -12,6 +12,11 @@ export interface Env {
 	 * Binding for static assets.
 	 */
 	ASSETS: { fetch: (request: Request) => Promise<Response> };
+
+	/**
+	 * Groq API Key for proxying requests.
+	 */
+	GROQ_API_KEY?: string;
 }
 
 /**
